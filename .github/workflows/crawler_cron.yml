@@ -1,0 +1,29 @@
+name: Hourly PTT Crawler
+
+on:
+  schedule:
+    # 每小時的第 0 分鐘執行一次 (UTC 時間)
+    - cron: '0 * * * *'
+  workflow_dispatch: # 能夠讓你在 GitHub 網頁上手動點擊執行
+
+jobs:
+  run-crawler:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v4
+        with:
+          version: "latest"
+
+      - name: Run crawler
+        env:
+          # 在此設定你要搜尋的標的與頁數
+          KEYWORD: "IVE"
+          PAGES: "5"
+          # 讀取 Telegram 相關的 GitHub Secrets
+          TG_BOT_TOKEN: ${{ secrets.TG_BOT_TOKEN }}
+          TG_CHAT_ID: ${{ secrets.TG_CHAT_ID }}
+        run: uv run crawler.py -k "$KEYWORD" -p "$PAGES"
