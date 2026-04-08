@@ -35,11 +35,22 @@ def crawl_ptt(keyword, pages=5):
     results = []
     
     for _ in range(pages):
-        try:
-            res = requests.get(url, headers=headers)
-            res.raise_for_status()
-        except requests.exceptions.RequestException as e:
-            print(f"連線錯誤: {e}")
+        res = None
+        max_retries = 3
+        for attempt in range(max_retries):
+            try:
+                # 加上 timeout 避免卡住
+                res = requests.get(url, headers=headers, timeout=10)
+                res.raise_for_status()
+                break # 請求成功，跳出重試迴圈
+            except requests.exceptions.RequestException as e:
+                if attempt < max_retries - 1:
+                    print(f"網頁獲取失敗，等待 2 秒後重試 ({attempt+1}/{max_retries})...")
+                    time.sleep(2)
+                else:
+                    print(f"連線錯誤: {e}")
+        
+        if not res:
             break
             
         soup = BeautifulSoup(res.text, 'html.parser')
@@ -77,7 +88,7 @@ def crawl_ptt(keyword, pages=5):
             break
             
         # 避免請求過於頻繁阻擋爬蟲，稍微暫停
-        time.sleep(0.5)
+        time.sleep(1.0)
         
     return results
 
