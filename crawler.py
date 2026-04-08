@@ -33,6 +33,7 @@ def crawl_ptt(keyword, pages=5):
     }
 
     results = []
+    last_error = None
     
     for _ in range(pages):
         res = None
@@ -49,6 +50,7 @@ def crawl_ptt(keyword, pages=5):
                     time.sleep(2)
                 else:
                     print(f"連線錯誤: {e}")
+                    last_error = str(e)
         
         if not res:
             break
@@ -90,7 +92,7 @@ def crawl_ptt(keyword, pages=5):
         # 避免請求過於頻繁阻擋爬蟲，稍微暫停
         time.sleep(1.0)
         
-    return results
+    return results, last_error
 
 import argparse
 
@@ -114,7 +116,7 @@ if __name__ == "__main__":
             pages = 5
         
     print(f"\n正在尋找關鍵字「{keyword}」的票券中...\n")
-    found_tickets = crawl_ptt(keyword, pages)
+    found_tickets, last_error = crawl_ptt(keyword, pages)
     
     tg_token = os.environ.get("TG_BOT_TOKEN")
     tg_chat_id = os.environ.get("TG_CHAT_ID")
@@ -144,6 +146,18 @@ if __name__ == "__main__":
             
         if len(found_tickets) > MAX_RESULTS:
             tg_message += f"...還有 {len(found_tickets) - MAX_RESULTS} 筆結果因篇幅較長未顯示。"
+            
+    if last_error:
+        github_url = ""
+        # 讀取 GitHub Actions 環境變數拼湊連結
+        if os.environ.get("GITHUB_RUN_ID"):
+            repo = os.environ.get("GITHUB_REPOSITORY", "")
+            run_id = os.environ.get("GITHUB_RUN_ID", "")
+            github_url = f"https://github.com/{repo}/actions/runs/{run_id}"
+            
+        tg_message += f"\n\n⚠️ <b>爬蟲發生連線錯誤</b>\n<code>{last_error}</code>"
+        if github_url:
+            tg_message += f"\n👉 <a href='{github_url}'>點此查看 GitHub Action 執行紀錄</a>"
             
     if tg_token and tg_chat_id:
         send_telegram_message(tg_token, tg_chat_id, tg_message)
