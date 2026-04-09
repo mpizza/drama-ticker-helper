@@ -2,8 +2,7 @@ name: Hourly PTT Crawler
 
 on:
   schedule:
-    # 每小時的第 0 分鐘執行一次 (UTC 時間)
-    - cron: '0 * * * *'
+    - cron: '0 1-16/2 * * *'
   workflow_dispatch: # 能夠讓你在 GitHub 網頁上手動點擊執行
 
 jobs:
